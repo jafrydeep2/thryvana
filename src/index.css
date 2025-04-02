@@ -1,0 +1,125 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 260 20% 98%;
+    --foreground: 260 10% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 260 10% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 260 10% 10%;
+
+    --primary: 263 83% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 175 84% 40%;
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 35 92% 51%;
+    --accent-foreground: 260 10% 10%;
+
+    --muted: 260 20% 92%;
+    --muted-foreground: 260 10% 40%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 260 20% 92%;
+    --input: 260 20% 92%;
+    --ring: 260 90% 70%;
+
+    --radius: 1rem;
+  }
+ 
+  .dark {
+    --background: 260 20% 5%;
+    --foreground: 260 10% 98%;
+
+    --card: 260 20% 10%;
+    --card-foreground: 260 10% 98%;
+
+    --popover: 260 20% 10%;
+    --popover-foreground: 260 10% 98%;
+
+    --primary: 263 83% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 175 84% 40%;
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 35 92% 51%;
+    --accent-foreground: 260 10% 10%;
+
+    --muted: 260 20% 15%;
+    --muted-foreground: 260 10% 70%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 260 20% 20%;
+    --input: 260 20% 20%;
+    --ring: 260 90% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html, body {
+    height: 100%;
+    min-height: 100vh;
+    width: 100%;
+    overscroll-behavior: none;
+  }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground;
+  }
+  
+  /* Glass Effect */
+  .glass {
+    @apply bg-background/70 backdrop-blur-lg border border-border/50 shadow-sm;
+  }
+  
+  /* Crisp card style */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-md hover:translate-y-[-2px];
+  }
+  
+  #root {
+    height: 100%;
+  }
+}
+
+/* Custom page transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 500ms, transform 500ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 500ms, transform 500ms;
+}

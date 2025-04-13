@@ -39,6 +39,7 @@ interface Tribe {
 interface TribeMember {
   id: string;
   user_id: string;
+  tribe_id: string; // Add tribe_id to track which tribe this member belongs to
   username: string;
   email: string;
   joined_at: string;
@@ -46,7 +47,7 @@ interface TribeMember {
 
 const TribeManagement = () => {
   const [tribes, setTribes] = useState<Tribe[]>([]);
-  const [users, setUsers] = useState<TribeMember[]>([]);
+  const [tribeMembers, setTribeMembers] = useState<TribeMember[]>([]);
   const [editingTribe, setEditingTribe] = useState<Tribe | null>(null);
   const [showMembers, setShowMembers] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -70,7 +71,7 @@ const TribeManagement = () => {
           throw tribesError;
         }
 
-        // Fetch user-tribe memberships
+        // Fetch user-tribe memberships with user details
         const { data: userTribesData, error: userTribesError } = await supabase
           .from('user_tribes')
           .select(`
@@ -102,17 +103,18 @@ const TribeManagement = () => {
           checkInFrequency: tribe.frequency as FrequencyType
         })) : [];
 
-        // Format users data with tribe memberships
-        const formattedUsers: TribeMember[] = userTribesData ? userTribesData.map(membership => ({
-          id: membership.user_id,
+        // Format tribe members with correct tribe association
+        const formattedMembers: TribeMember[] = userTribesData ? userTribesData.map(membership => ({
+          id: `${membership.user_id}-${membership.tribe_id}`, // Create a unique ID for each membership
           user_id: membership.user_id,
+          tribe_id: membership.tribe_id, // Store the tribe_id to properly filter
           username: membership.users?.username || "Unknown User",
           email: membership.users?.email || "",
           joined_at: membership.joined_at || new Date().toISOString()
         })) : [];
 
         setTribes(formattedTribes);
-        setUsers(formattedUsers);
+        setTribeMembers(formattedMembers);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -170,8 +172,8 @@ const TribeManagement = () => {
 
       if (deleteError) throw deleteError;
 
-      // Update users who were in this tribe
-      setUsers(users.filter(user => user.id !== tribeId));
+      // Remove members associated with this tribe
+      setTribeMembers(tribeMembers.filter(member => member.tribe_id !== tribeId));
       
       // Update local tribes state
       setTribes(tribes.filter(tribe => tribe.id !== tribeId));
@@ -241,9 +243,10 @@ const TribeManagement = () => {
 
       if (error) throw error;
       
-      // Update local state
-      const updatedUsers = users.filter(user => !(user.user_id === userId));
-      setUsers(updatedUsers);
+      // Update local state by removing this specific membership
+      setTribeMembers(tribeMembers.filter(
+        member => !(member.user_id === userId && member.tribe_id === tribeId)
+      ));
       
       // Update tribe member count
       setTribes(tribes.map(tribe => 
@@ -430,25 +433,26 @@ const TribeManagement = () => {
                             <CardTitle className="text-sm">Tribe Members</CardTitle>
                           </CardHeader>
                           <CardContent className="py-0">
-                            {users.filter(user => user.id === tribe.id).length === 0 ? (
+                            {/* The key fix: Filter members by tribe_id instead of id */}
+                            {tribeMembers.filter(member => member.tribe_id === tribe.id).length === 0 ? (
                               <p className="text-sm text-muted-foreground">No members in this tribe</p>
                             ) : (
                               <div className="space-y-2">
-                                {users.filter(user => user.id === tribe.id).map(user => (
-                                  <div key={user.user_id} className="flex items-center justify-between bg-muted p-2 rounded-md">
+                                {tribeMembers.filter(member => member.tribe_id === tribe.id).map(member => (
+                                  <div key={member.id} className="flex items-center justify-between bg-muted p-2 rounded-md">
                                     <div className="flex items-center space-x-2">
                                       <Badge variant="outline" className="h-8 w-8 rounded-full flex items-center justify-center">
-                                        {user.username.charAt(0).toUpperCase()}
+                                        {member.username.charAt(0).toUpperCase()}
                                       </Badge>
                                       <div>
-                                        <p className="text-sm font-medium">{user.username}</p>
-                                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                                        <p className="text-sm font-medium">{member.username}</p>
+                                        <p className="text-xs text-muted-foreground">{member.email}</p>
                                       </div>
                                     </div>
                                     <Button 
                                       variant="ghost" 
                                       size="sm"
-                                      onClick={() => removeUserFromTribe(user.user_id, tribe.id)}
+                                      onClick={() => removeUserFromTribe(member.user_id, tribe.id)}
                                     >
                                       <X className="h-4 w-4 text-red-500" />
                                       <span className="sr-only">Remove</span>

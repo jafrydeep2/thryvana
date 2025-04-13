@@ -21,11 +21,11 @@ const AdminDashboard = ({ adminMetrics }: AdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState("stats");
 
   return (
-    <div className="container py-8 max-w-7xl">
+    <div className="container py-8 max-w-full px-4 md:px-6">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-8 grid grid-cols-4 w-[400px]">
+        <TabsList className="mb-8 grid grid-cols-4 w-full md:w-[400px]">
           <TabsTrigger value="stats">Stats</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="tribes">Tribes</TabsTrigger>

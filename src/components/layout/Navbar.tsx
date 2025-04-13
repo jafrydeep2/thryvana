@@ -4,7 +4,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Users, CheckCircle, User, Menu, X } from "lucide-react";
+import { Home, Users, CheckCircle, User, Menu, X, MessageSquare } from "lucide-react";
+import thryvanaLogo from '../../assets/images/thyvana-logo-3.png'
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,6 +16,7 @@ const Navbar = () => {
     { name: "Tribe", path: "/tribe", icon: Users },
     { name: "Check In", path: "/checkin", icon: CheckCircle },
     { name: "Profile", path: "/profile", icon: User },
+    { name: "Feedback", path: "/feedback", icon: MessageSquare }, // Add Feedback to nav items
   ];
 
   const handleCheckin = (path) => {
@@ -26,14 +28,16 @@ const Navbar = () => {
     <header className="sticky top-0 z-50 w-full glass">
       <div className="container flex items-center justify-between h-16 px-4 md:px-6">
         <Link to="/dashboard" className="flex items-center gap-2">
-          <motion.div
+          {/* <motion.div
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
             className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground"
           >
             <span className="font-bold">T</span>
           </motion.div>
-          <span className="font-bold text-lg tracking-tight">Thryvana</span>
+          <span className="font-bold text-lg tracking-tight">Thryvana</span> */}
+          <img src={thryvanaLogo} alt="thryvanaLogo" className="w-[150px]" />
+
         </Link>
 
         {/* Mobile menu button */}

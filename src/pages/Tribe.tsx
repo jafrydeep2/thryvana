@@ -27,8 +27,7 @@ const Tribe = () => {
     } catch (error) {
       console.error("Error fetching check-ins:", error);
       toast.error("Failed to load check-ins. Please refresh the page.");
-      setIsLoading(false);
-    }finally{
+    } finally {
       setIsLoading(false);
     }
   }, []);

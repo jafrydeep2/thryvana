@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Eye, EyeOff, Save, User, Mail, Lock, LogOut, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, Save, User, Mail, Lock, LogOut, AlertTriangle, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,7 @@ import {
 const profileSchema = z.object({
   username: z.string().min(3, { message: "Username must be at least 3 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
+  marketingConsent: z.boolean().optional(),
 });
 
 const passwordSchema = z.object({
@@ -65,16 +67,18 @@ const ProfileSettings = () => {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       username: "",
-      email: ""
+      email: "",
+      marketingConsent: false
     }
   });
   
-  // Update form values when userDetails changes
+  // Update form values when userDetails changes changes
   useEffect(() => {
     if (userDetails) {
       profileForm.reset({
         username: userDetails.username,
         email: userDetails.email,
+        marketingConsent: userDetails.marketingConsent || false,
       });
     }
   }, [userDetails, profileForm]);
@@ -101,7 +105,11 @@ const ProfileSettings = () => {
         .from('users')
         .update({
           username: data.username,
-          email: data.email
+          email: data.email,
+          profile_details: {
+            ...userDetails?.profile_details,
+            marketingConsent: data.marketingConsent
+          }
         })
         .eq('user_id', user.id);
       
@@ -109,7 +117,10 @@ const ProfileSettings = () => {
       
       // Update user metadata in auth
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { username: data.username }
+        data: { 
+          username: data.username,
+          marketingConsent: data.marketingConsent
+        }
       });
       
       if (updateError) throw updateError;
@@ -204,6 +215,26 @@ const ProfileSettings = () => {
                       We'll use this email to send you notifications
                     </FormDescription>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={profileForm.control}
+                name="marketingConsent"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Marketing emails</FormLabel>
+                      <FormDescription>
+                        I agree to receive marketing emails about updates and new features.
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -329,6 +360,15 @@ const ProfileSettings = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={() => navigate("/feedback")}
+          >
+            <MessageSquare className="mr-2 h-4 w-4" />
+            Send Feedback
+          </Button>
+          
           <Button 
             variant="outline" 
             className="w-full" 

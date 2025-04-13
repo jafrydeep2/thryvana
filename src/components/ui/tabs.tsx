@@ -2,6 +2,7 @@ import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 
 import { cn } from "@/lib/utils"
+import { useLocation } from "react-router-dom"
 
 const Tabs = TabsPrimitive.Root
 
@@ -38,16 +39,37 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Content
-    ref={ref}
-    className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const [isAdmin, setIsAdmin] = React.useState(false);
+  const location = useLocation();
+
+  React.useEffect(() => {
+    const checkAdmin = () => {
+      setIsAdmin(location.pathname.includes('/admin'));
+    };
+
+    checkAdmin(); // Run on mount
+
+    // Optional: Update if path changes (e.g., using popstate)
+    window.addEventListener('popstate', checkAdmin);
+
+    return () => {
+      window.removeEventListener('popstate', checkAdmin);
+    };
+  }, [location.pathname]);
+
+  return (
+    <TabsPrimitive.Content
+      ref={ref}
+      className={cn(
+        " mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        className,
+        isAdmin && 'min-h-[60vh]'
+      )}
+      {...props}
+    />
+  )
+})
 TabsContent.displayName = TabsPrimitive.Content.displayName
 
 export { Tabs, TabsList, TabsTrigger, TabsContent }

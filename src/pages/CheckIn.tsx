@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, AlertCircle } from "lucide-react";
 import CheckInForm from "@/components/checkins/CheckInForm";
 import { getCurrentUserId, Goal, useGoals } from "@/hooks/useGoals";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 const CheckIn = () => {
   const { getNextCheckInDate } = useGoals();
@@ -15,25 +16,57 @@ const CheckIn = () => {
   const [nextCheckInDate, setNextCheckInDate] = useState<Date | null>(null);
   const { id } = useParams()
   const [activeGoal, setActiveGoal] = useState<Goal | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchActiveGoal = async () => {
-      if (!id) return;
-      const goal: any = await getActiveGoalDetails(id); // Await the async function
+      if (!id) {
+        // If no goal ID is provided, check if user has any active goal
+        const userId = await getCurrentUserId();
+        const { data, error } = await supabase
+          .from('goals')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error fetching active goals:", error);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!data) {
+          console.log("No active goal found");
+          setActiveGoal(null);
+          setIsLoading(false);
+          return;
+        }
+        
+        // If found an active goal, continue with normal flow
+        const mappedGoal = await getActiveGoalDetails(data.goal_id);
+        setActiveGoal(mappedGoal);
+        if (mappedGoal) {
+          setNextCheckInDate(getNextCheckInDate(mappedGoal));
+        }
+        setIsLoading(false);
+        return;
+      }
+      
+      const goal: any = await getActiveGoalDetails(id);
       if (goal) {
         setActiveGoal(goal);
         console.log("Active goal found:", goal.title);
         setNextCheckInDate(getNextCheckInDate(goal));
       } else {
-        console.log("No active goal found, redirecting to dashboard");
+        console.log("No active goal found with ID:", id);
         setActiveGoal(null);
-        navigate("/dashboard");
       }
+      setIsLoading(false);
     };
 
-    fetchActiveGoal()
+    fetchActiveGoal();
   }, [id]);
-
 
   const getActiveGoalDetails = async (goalId: string) => {
     try {
@@ -85,6 +118,37 @@ const CheckIn = () => {
       day: 'numeric'
     }).format(date);
   };
+
+  if (!activeGoal && !isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Check In</h1>
+          <p className="text-muted-foreground mt-1">Share your progress with your tribe</p>
+        </div>
+        
+        <Card className="glass shadow-lg">
+          <CardHeader>
+            <CardTitle>No Active Goal Found</CardTitle>
+            <CardDescription>
+              You need to create a goal before you can check in.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              <AlertDescription>
+                You don't have an active goal to check in for. Create a goal to start tracking your progress.
+              </AlertDescription>
+            </Alert>
+            <Button onClick={() => navigate("/goal/create")} className="w-full">
+              Create a Goal
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

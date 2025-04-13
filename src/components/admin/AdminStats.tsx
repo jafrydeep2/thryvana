@@ -1,4 +1,4 @@
-import { BarChart, Calendar, Users, UserCheck, TrendingUp, Database, AlertTriangle } from "lucide-react";
+import { BarChart, Calendar, Users, UserCheck, TrendingUp, Database, AlertTriangle, Target, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
@@ -10,6 +10,8 @@ interface StatsData {
   activeUsers: number;
   totalTribes: number;
   totalCheckIns: number;
+  totalActiveGoals: number;
+  totalCompletedGoals: number;
   recentActivity: {
     type: string;
     username: string;
@@ -42,6 +44,8 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
     activeUsers: 0,
     totalTribes: 0,
     totalCheckIns: 0,
+    totalActiveGoals: 0,
+    totalCompletedGoals: 0,
     recentActivity: [],
     checkInsByFrequency: {
       daily: 0,
@@ -68,7 +72,7 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
         // Calculate active users (users who logged in within the last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
+
         const { count: activeUsers, error: activeUsersError } = await supabase
           .from('users')
           .select('*', { count: 'exact', head: true })
@@ -101,6 +105,29 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
           throw checkInsError;
         }
 
+        // Fetch total active goals
+        const { count: totalActiveGoals, error: activeGoalsError } = await supabase
+          .from('goals')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true);
+
+        if (activeGoalsError) {
+          toast.error(`Error fetching active goals count: ${activeGoalsError.message}`);
+          throw activeGoalsError;
+        }
+
+        // Fetch total completed goals
+        const { count: totalCompletedGoals, error: completedGoalsError } = await supabase
+          .from('goals')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', false);
+
+        if (completedGoalsError) {
+          toast.error(`Error fetching completed goals count: ${completedGoalsError.message}`);
+          throw completedGoalsError;
+        }
+
+
         // Fetch recent activity (check-ins)
         const { data: recentCheckIns, error: recentError } = await supabase
           .from('check_ins')
@@ -124,7 +151,7 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
 
         // Fetch user details for recent activity
         let recentActivity: StatsData['recentActivity'] = [];
-        
+
         if (recentCheckIns && recentCheckIns.length > 0) {
           const userIds = recentCheckIns.map(item => item.user_id);
           const { data: userData, error: userError } = await supabase
@@ -180,17 +207,19 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
             monthly: Math.round((totalCheckIns || 0) * 0.05)
           };
         }
-        
+
         // Set the stats
         setStats({
           totalUsers: totalUsers || 0,
           activeUsers: activeUsers || Math.round((totalUsers || 0) * 0.8),
           totalTribes: totalTribes || 0,
           totalCheckIns: totalCheckIns || 0,
+          totalActiveGoals: totalActiveGoals || 0,
+          totalCompletedGoals: totalCompletedGoals || 0,
           recentActivity,
           checkInsByFrequency
         });
-        
+
         toast.success("Admin stats loaded successfully");
       } catch (error) {
         console.error("Error fetching admin stats:", error);
@@ -220,7 +249,7 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
             </Card>
           ))}
         </div>
-        
+
         <Card className="col-span-full animate-pulse">
           <CardHeader>
             <div className="h-6 bg-gray-200 rounded w-1/4 mb-2"></div>
@@ -246,8 +275,7 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-3 lg:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -260,7 +288,7 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tribes</CardTitle>
@@ -273,7 +301,7 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Check-ins</CardTitle>
@@ -286,7 +314,7 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Check-in Trends</CardTitle>
@@ -296,10 +324,10 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
             <div className="flex items-center space-x-2">
               <span className="text-xs font-medium">Daily:</span>
               <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full" 
-                  style={{ 
-                    width: `${stats.totalCheckIns > 0 ? (stats.checkInsByFrequency.daily / stats.totalCheckIns) * 100 : 0}%` 
+                <div
+                  className="bg-primary h-2 rounded-full"
+                  style={{
+                    width: `${stats.totalCheckIns > 0 ? ((stats.checkInsByFrequency.daily / stats.totalCheckIns) * 100) : 0}%`
                   }}
                 ></div>
               </div>
@@ -307,18 +335,51 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
             <div className="flex items-center space-x-2 mt-1">
               <span className="text-xs font-medium">Weekly:</span>
               <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full" 
-                  style={{ 
-                    width: `${stats.totalCheckIns > 0 ? (stats.checkInsByFrequency.weekly / stats.totalCheckIns) * 100 : 0}%` 
+                <div
+                  className="bg-primary h-2 rounded-full"
+                  style={{
+                    width: `${stats.totalCheckIns > 0
+                      ? Math.min(
+                        (stats.checkInsByFrequency.weekly / stats.totalCheckIns) * 100,
+                        100
+                      )
+                      : 0
+                      }%`,
                   }}
                 ></div>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Active Goals</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalActiveGoals}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.totalUsers > 0 ? (stats.totalActiveGoals / stats.totalUsers).toFixed(1) : 0} goals per user
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Completed Goals</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalCompletedGoals}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.totalUsers > 0 ? (stats.totalCompletedGoals / stats.totalUsers).toFixed(1) : 0} goals per user
+            </p>
+          </CardContent>
+        </Card>
+
       </div>
-      
+
       {/* New section for deleted items statistics */}
       {adminMetrics && (
         <Card className="col-span-full border-dashed border-yellow-500">
@@ -350,7 +411,7 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
           </CardContent>
         </Card>
       )}
-      
+
       <Card className="col-span-full">
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
@@ -359,7 +420,7 @@ const AdminStats = ({ adminMetrics }: AdminStatsProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          
+
           {stats.recentActivity.length > 0 ? (
             <div className="space-y-4">
               {stats.recentActivity.map((activity, index) => (

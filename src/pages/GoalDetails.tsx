@@ -305,19 +305,19 @@ const GoalDetails = () => {
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-muted-foreground">Progress</h3>
                 <Progress value={goal.progress} className="h-3" />
-                <div className="flex justify-between text-sm">
+                <div className="flex flex-wrap md:flex-nowrap justify-between text-sm">
                   <span>Started: {formatDate(goal.startDate)}</span>
                   <span>{goal.progress}% Complete</span>
                   <span>Target: {formatDate(goal.targetDate)}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Your Motivator</h3>
                   <Card className="bg-primary/5 border-primary/20">
                     <CardContent className="p-4">
-                      <p className="italic text-sm">{goal.motivator}</p>
+                      <p className="italic text-sm break-words whitespace-normal">{goal.motivator}</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -325,14 +325,14 @@ const GoalDetails = () => {
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Celebration Plan</h3>
                   <Card className="bg-secondary/5 border-secondary/20">
                     <CardContent className="p-4">
-                      <p className="italic text-sm">{goal.celebration}</p>
+                      <p className="italic text-sm break-words whitespace-normal">{goal.celebration}</p>
                     </CardContent>
                   </Card>
                 </div>
               </div>
             </CardContent>
             {!goal.isCompleted && (
-              <CardFooter className="justify-between">
+              <CardFooter className="justify-between gap-2">
                 <Button
                   variant="outline"
                   onClick={() => navigate("/checkin/" + goal.id)}

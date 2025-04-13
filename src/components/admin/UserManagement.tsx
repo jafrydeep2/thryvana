@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { User, Pencil, Trash2, Check, X, UserPlus } from "lucide-react";
 
@@ -34,6 +35,8 @@ interface User {
   email: string;
   tribe: string | null;
   check_in_frequency: FrequencyType;
+  activeGoal: boolean;
+  checkInCount: number;
 }
 
 interface Tribe {
@@ -57,109 +60,116 @@ const UserManagement = () => {
     check_in_frequency: "daily" as FrequencyType
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch users
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*');
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // Fetch users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*');
 
-        if (userError) {
-          toast.error(`Error fetching users: ${userError.message}`);
-          throw userError;
-        }
-
-        // Fetch tribes
-        const { data: tribeData, error: tribeError } = await supabase
-          .from('tribes')
-          .select('*');
-
-        if (tribeError) {
-          toast.error(`Error fetching tribes: ${tribeError.message}`);
-          throw tribeError;
-        }
-
-        // Get tribe memberships
-        const { data: userTribesData, error: userTribesError } = await supabase
-          .from('user_tribes')
-          .select('*');
-
-        if (userTribesError) {
-          toast.error(`Error fetching user-tribe relationships: ${userTribesError.message}`);
-          throw userTribesError;
-        }
-
-        // Get frequency from goals
-        const { data: goalsData, error: goalsError } = await supabase
-          .from('goals')
-          .select('user_id, frequency')
-          .order('created_at', { ascending: false });
-
-        if (goalsError) {
-          toast.error(`Error fetching goals: ${goalsError.message}`);
-          throw goalsError;
-        }
-
-        // Calculate tribe member counts
-        const tribeCounts: Record<string, number> = {};
-        if (userTribesData) {
-          userTribesData.forEach(relationship => {
-            if (relationship.tribe_id) {
-              tribeCounts[relationship.tribe_id] = (tribeCounts[relationship.tribe_id] || 0) + 1;
-            }
-          });
-        }
-
-        // Format tribes data
-        const formattedTribes = tribeData ? tribeData.map(tribe => ({
-          id: tribe.tribe_id,
-          tribe_id: tribe.tribe_id,
-          name: `Tribe ${tribe.tribe_id.substring(0, 4)}`,
-          memberCount: tribeCounts[tribe.tribe_id] || 0
-        })) : [];
-
-        // Map user tribe memberships
-        const userTribeMap: Record<string, string> = {};
-        if (userTribesData) {
-          userTribesData.forEach(relationship => {
-            userTribeMap[relationship.user_id] = relationship.tribe_id;
-          });
-        }
-
-        // Map user frequencies from their most recent goals
-        const userFrequencyMap: Record<string, string> = {};
-        if (goalsData) {
-          // We only want the most recent goal for each user
-          const processedUsers = new Set();
-          goalsData.forEach(goal => {
-            if (!processedUsers.has(goal.user_id)) {
-              userFrequencyMap[goal.user_id] = goal.frequency;
-              processedUsers.add(goal.user_id);
-            }
-          });
-        }
-
-        // Format users data
-        const formattedUsers = userData ? userData.map(user => ({
-          id: user.user_id,
-          user_id: user.user_id,
-          username: user.username,
-          email: user.email,
-          tribe: userTribeMap[user.user_id] || null,
-          check_in_frequency: userFrequencyMap[user.user_id] as FrequencyType || "daily"
-        })) : [];
-
-        setUsers(formattedUsers);
-        setTribes(formattedTribes);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
+      if (userError) {
+        toast.error(`Error fetching users: ${userError.message}`);
+        throw userError;
       }
-    };
 
+      // Fetch tribes
+      const { data: tribeData, error: tribeError } = await supabase
+        .from('tribes')
+        .select('*');
+
+      if (tribeError) {
+        toast.error(`Error fetching tribes: ${tribeError.message}`);
+        throw tribeError;
+      }
+
+      // Get tribe memberships
+      const { data: userTribesData, error: userTribesError } = await supabase
+        .from('user_tribes')
+        .select('*');
+
+      if (userTribesError) {
+        toast.error(`Error fetching user-tribe relationships: ${userTribesError.message}`);
+        throw userTribesError;
+      }
+
+      // Get active goals data
+      const { data: goalsData, error: goalsError } = await supabase
+        .from('goals')
+        .select('user_id, frequency, is_active, check_in_count')
+        .order('created_at', { ascending: false });
+
+      if (goalsError) {
+        toast.error(`Error fetching goals: ${goalsError.message}`);
+        throw goalsError;
+      }
+
+      // Calculate tribe member counts
+      const tribeCounts: Record<string, number> = {};
+      if (userTribesData) {
+        userTribesData.forEach(relationship => {
+          if (relationship.tribe_id) {
+            tribeCounts[relationship.tribe_id] = (tribeCounts[relationship.tribe_id] || 0) + 1;
+          }
+        });
+      }
+
+      // Format tribes data
+      const formattedTribes = tribeData ? tribeData.map(tribe => ({
+        id: tribe.tribe_id,
+        tribe_id: tribe.tribe_id,
+        name: `Tribe ${tribe.tribe_id.substring(0, 4)}`,
+        memberCount: tribeCounts[tribe.tribe_id] || 0
+      })) : [];
+
+      // Map user tribe memberships
+      const userTribeMap: Record<string, string> = {};
+      if (userTribesData) {
+        userTribesData.forEach(relationship => {
+          userTribeMap[relationship.user_id] = relationship.tribe_id;
+        });
+      }
+
+      // Map user goal data
+      const userGoalMap: Record<string, {frequency: string, active: boolean, checkInCount: number}> = {};
+      if (goalsData) {
+        // Process each user's most recent goal
+        const processedUsers = new Set();
+        goalsData.forEach(goal => {
+          if (!processedUsers.has(goal.user_id)) {
+            userGoalMap[goal.user_id] = {
+              frequency: goal.frequency,
+              active: !!goal.is_active,
+              checkInCount: goal.check_in_count || 0
+            };
+            processedUsers.add(goal.user_id);
+          }
+        });
+      }
+
+      // Format users data
+      const formattedUsers = userData ? userData.map(user => ({
+        id: user.user_id,
+        user_id: user.user_id,
+        username: user.username,
+        email: user.email,
+        tribe: userTribeMap[user.user_id] || null,
+        check_in_frequency: userGoalMap[user.user_id]?.frequency as FrequencyType || "daily",
+        activeGoal: userGoalMap[user.user_id]?.active || false,
+        checkInCount: userGoalMap[user.user_id]?.checkInCount || 0
+      })) : [];
+
+      setUsers(formattedUsers);
+      setTribes(formattedTribes);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -257,10 +267,12 @@ const UserManagement = () => {
         username: user.username,
         email: user.email,
         tribe: userTribeMap[user.user_id] || null,
+        checkInCount: users[user.user_id]?.check_in_count || 0,
         check_in_frequency: users.find(u => u.user_id === user.user_id)?.check_in_frequency || "daily"
       })) : [];
       
-      setUsers(formattedUpdatedUsers);
+      setUsers(formattedUpdatedUsers as any);
+      // await fetchData(); 
       setEditingUser(null);
       toast.success("User updated successfully");
     } catch (error: any) {
@@ -485,15 +497,17 @@ const UserManagement = () => {
           <p className="text-sm">Add users using the "Add User" button</p>
         </div>
       ) : (
-        <div className="rounded-md border">
-          <Table>
+        <div className="rounded-md border overflow-x-auto">
+          <Table className="min-w-full">
             <TableHeader>
               <TableRow>
-                <TableHead>Username</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Tribe</TableHead>
-                <TableHead>Check-in Frequency</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="whitespace-nowrap">Username</TableHead>
+                <TableHead className="whitespace-nowrap">Email</TableHead>
+                <TableHead className="whitespace-nowrap">Tribe</TableHead>
+                <TableHead className="whitespace-nowrap">Check-in Frequency</TableHead>
+                <TableHead className="whitespace-nowrap">Active Goal</TableHead>
+                <TableHead className="whitespace-nowrap">Check-ins</TableHead>
+                <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -548,6 +562,8 @@ const UserManagement = () => {
                           </SelectContent>
                         </Select>
                       </TableCell>
+                      <TableCell>{user.activeGoal ? "Yes" : "No"}</TableCell>
+                      <TableCell>{user.checkInCount}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={handleSaveEdit}>
                           <Check className="h-4 w-4 text-green-500" />
@@ -565,6 +581,8 @@ const UserManagement = () => {
                         {user.tribe ? tribes.find(t => t.id === user.tribe)?.name || `Tribe ${user.tribe.substring(0, 4)}` : "No Tribe"}
                       </TableCell>
                       <TableCell className="capitalize">{user.check_in_frequency}</TableCell>
+                      <TableCell>{user.activeGoal ? "Yes" : "No"}</TableCell>
+                      <TableCell>{user.checkInCount}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
                           <Pencil className="h-4 w-4" />

@@ -20,6 +20,7 @@ import GoalDetails from "./pages/GoalDetails";
 import Tribe from "./pages/Tribe";
 import CheckIn from "./pages/CheckIn";
 import Profile from "./pages/Profile";
+import Feedback from "./pages/Feedback"; // Add import for Feedback page
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 
@@ -36,6 +37,7 @@ const App = () => (
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
+              <Route path="/feedback" element={<Feedback />} /> {/* Add new route */}
               
               {/* Auth routes */}
               <Route element={<AuthLayout />}>
@@ -51,6 +53,7 @@ const App = () => (
                 <Route path="/tribe" element={<Tribe />} />
                 <Route path="/checkin/:id" element={<CheckIn />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/feedback" element={<Feedback />} /> {/* Add to protected routes as well */}
               </Route>
               
               {/* 404 route */}

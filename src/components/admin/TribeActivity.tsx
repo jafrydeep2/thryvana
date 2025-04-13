@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar, User, ThumbsUp, Heart, Star, Flame, Loader2 } from "lucide-react";
 import {
@@ -192,7 +191,7 @@ const TribeActivity = () => {
         </Select>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 w-full overflow-x-auto">
         {filteredCheckIns.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
@@ -201,7 +200,7 @@ const TribeActivity = () => {
           </Card>
         ) : (
           filteredCheckIns.map(checkIn => (
-            <Card key={checkIn.id}>
+            <Card key={checkIn.id} className="w-full">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center space-x-2">

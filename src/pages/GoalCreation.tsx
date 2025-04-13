@@ -13,6 +13,13 @@ const GoalCreation = () => {
           Photo check-ins will be available soon! For now, you can track your progress with text check-ins.
         </AlertDescription>
       </Alert>
+      <style jsx>{`
+        /* Add styles to ensure text wraps in the motivator and celebration plan boxes */
+        :global(.goal-info-box) {
+          word-break: break-word;
+          overflow-wrap: break-word;
+        }
+      `}</style>
       <GoalCreationForm />
     </div>
   );

@@ -14,11 +14,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Form schemas
 const loginSchema = z.object({
@@ -31,6 +33,7 @@ const registerSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(8, { message: "Password must be at least 8 characters" }),
   confirmPassword: z.string(),
+  marketingConsent: z.boolean().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -63,6 +66,7 @@ const AuthForm = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      marketingConsent: false,
     },
   });
 
@@ -84,7 +88,8 @@ const AuthForm = () => {
     try {
       setIsSubmitting(true);
       console.log("Register form submitted:", data);
-      await signUp(data.email, data.password, data.username);
+      // Pass marketing consent to signUp
+      await signUp(data.email, data.password, data.username, data.marketingConsent);
     } finally {
       setIsSubmitting(false);
     }
@@ -175,6 +180,9 @@ const AuthForm = () => {
                       <FormControl>
                         <Input placeholder="Choose a username" {...field} />
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        We recommend using an anonymous username not linked to your real name.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -245,6 +253,26 @@ const AuthForm = () => {
                         </div>
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={registerForm.control}
+                  name="marketingConsent"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Marketing emails</FormLabel>
+                        <FormDescription className="text-xs">
+                          I agree to receive marketing emails about updates and new features.
+                        </FormDescription>
+                      </div>
                     </FormItem>
                   )}
                 />

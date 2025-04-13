@@ -1,7 +1,6 @@
-
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, UserCircle, Target, Users, CheckCircle, ShieldCheck, LockKeyhole } from "lucide-react";
+import { ArrowRight, UserCircle, Target, Users, CheckCircle, ShieldCheck, LockKeyhole, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -68,7 +67,7 @@ const Index = () => {
             Thryvana
           </motion.span>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           <Button
             variant="ghost"
             onClick={() => navigate("/auth")}
@@ -244,6 +243,15 @@ const Index = () => {
             <span className="font-medium">Thryvana</span>
           </div>
           <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={() => navigate("/feedback")}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Send Feedback
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 

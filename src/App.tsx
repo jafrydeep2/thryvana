@@ -23,6 +23,7 @@ import Profile from "./pages/Profile";
 import Feedback from "./pages/Feedback"; // Add import for Feedback page
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
+import PWAInstallPage from "./pages/PWAInstallPage";
 
 const queryClient = new QueryClient();
 
@@ -35,18 +36,20 @@ const App = () => (
         <AuthProvider>
           <AnimatePresence mode="wait">
             <Routes>
+
               {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/feedback" element={<Feedback />} /> {/* Add new route */}
-              
               {/* Auth routes */}
               <Route element={<AuthLayout />}>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/admin" element={<Admin />} />
               </Route>
-              
+
               {/* Protected routes */}
               <Route element={<MainLayout />}>
+                {/* PWA */}
+                <Route path="/install" element={<PWAInstallPage />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/goal/create" element={<GoalCreation />} />
                 <Route path="/goal/:goalId" element={<GoalDetails />} />
@@ -55,7 +58,7 @@ const App = () => (
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/feedback" element={<Feedback />} /> {/* Add to protected routes as well */}
               </Route>
-              
+
               {/* 404 route */}
               <Route path="*" element={<NotFound />} />
             </Routes>

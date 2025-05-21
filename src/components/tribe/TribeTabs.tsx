@@ -10,7 +10,8 @@ const TribeTabs = ({ activeTab, setActiveTab, tribeMembers, checkIns, isRefreshi
             <TabsTrigger value="members"><UserCircle className="h-4 w-4 mr-2" /> Members</TabsTrigger>
             <TabsTrigger value="check-ins"><Calendar className="h-4 w-4 mr-2" /> Check-ins</TabsTrigger>
         </TabsList>
-        <TribeMembersList tribeMembers={tribeMembers}
+        <TribeMembersList
+            tribeMembers={tribeMembers}
             checkIns={checkIns}
             isRefreshing={isRefreshing}
             userId={userId}

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, Clock, Target, Award, CheckCircle, FileText, MessageSquare } from "lucide-react";
+import { Calendar, Clock, Target, Award, CheckCircle, FileText, MessageSquare, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import ReactConfetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentUserId } from "@/hooks/useGoals";
-
+import Swal from 'sweetalert2'
 // Define the Goal type
 interface Goal {
   id: string;
@@ -166,6 +166,25 @@ const GoalDetails = () => {
     }
   };
 
+  // Delete a goal from Supabase
+  const deleteGoal = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .delete()
+        .eq('goal_id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting goal:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const loadGoals = async () => {
       // Fetch all goals first (for debugging/future use)
@@ -207,6 +226,31 @@ const GoalDetails = () => {
       }, 5000);
     } else {
       toast.error("Failed to mark goal as complete");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!goal) return;
+    // Use SweetAlert2 for confirmation
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to recover this goal!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    // If user confirms deletion
+    if (result.isConfirmed) {
+      const success = await deleteGoal(goal.id);
+      if (success) {
+        toast.success('Goal deleted successfully')
+        navigate('/dashboard')
+      } else {
+        toast.error("Failed to mark goal as complete");
+      }
     }
   };
 
@@ -332,21 +376,35 @@ const GoalDetails = () => {
               </div>
             </CardContent>
             {!goal.isCompleted && (
-              <CardFooter className="justify-between gap-2">
+              <CardFooter className="justify-between gap-2 flex-col md:flex-row">
                 <Button
                   variant="outline"
                   onClick={() => navigate("/checkin/" + goal.id)}
+                  className="w-full md:w-fit"
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Check In
                 </Button>
-                <Button
-                  onClick={handleMarkComplete}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Mark as Complete
-                </Button>
+
+                <div className="flex items-center gap-2 w-full md:w-fit">
+                 
+                  <Button
+                    onClick={handleMarkComplete}
+                    className="bg-green-600 hover:bg-green-700 w-full md:w-fit"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Mark as Complete
+                  </Button>
+
+                  <Button
+                    onClick={handleDelete}
+                    className="bg-red-600 hover:bg-red-700 w-full md:w-fit"
+                  >
+                    <Trash className="h-4 w-4" />
+                    Delete
+                  </Button>
+
+                </div>
               </CardFooter>
             )}
           </Card>

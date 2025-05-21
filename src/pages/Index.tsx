@@ -1,12 +1,13 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, UserCircle, Target, Users, CheckCircle, ShieldCheck, LockKeyhole, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import thryvanaLogo from '../assets/images/thyvana-logo-3.png'
 
 const Index = () => {
   const navigate = useNavigate();
-  
+
   const features = [
     {
       icon: Target,
@@ -29,7 +30,7 @@ const Index = () => {
       description: "Your information is secure with our anonymous tribe system.",
     },
   ];
-  
+
   const staggerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -39,34 +40,19 @@ const Index = () => {
       },
     },
   };
-  
+
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { duration: 0.5 } },
   };
-  
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
       <header className="w-full py-4 px-4 flex justify-between items-center glass z-10">
-        <div className="flex items-center gap-2">
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground"
-          >
-            <span className="font-bold">T</span>
-          </motion.div>
-          <motion.span 
-            initial={{ x: -10, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="font-bold text-lg tracking-tight"
-          >
-            Thryvana
-          </motion.span>
-        </div>
+        <Link to="/" className="flex items-center gap-2">
+          <img src={thryvanaLogo} alt="thryvanaLogo" className="w-[150px]" />
+        </Link>
         <div className="flex gap-2">
           <Button
             variant="ghost"
@@ -81,7 +67,7 @@ const Index = () => {
           </Button>
         </div>
       </header>
-      
+
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative py-16 md:py-24 px-4 overflow-hidden">
@@ -94,7 +80,7 @@ const Index = () => {
                 transition={{ duration: 0.6 }}
                 className="space-y-6"
               >
-                <motion.h1 
+                <motion.h1
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.1 }}
@@ -103,7 +89,7 @@ const Index = () => {
                   Find Your Tribe,<br />
                   <span className="text-primary">Achieve Your Goals</span>
                 </motion.h1>
-                <motion.p 
+                <motion.p
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
@@ -111,7 +97,7 @@ const Index = () => {
                 >
                   Thryvana connects you with a supportive community that helps you stay accountable and motivated on your personal growth journey.
                 </motion.p>
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.3 }}
@@ -139,7 +125,7 @@ const Index = () => {
                   </Button>
                 </motion.div>
               </motion.div>
-              
+
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -157,12 +143,12 @@ const Index = () => {
             </div>
           </div>
         </section>
-        
+
         {/* Features Section */}
         <section id="features" className="py-16 px-4">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
-              <motion.h2 
+              <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
@@ -170,7 +156,7 @@ const Index = () => {
               >
                 How Thryvana Works
               </motion.h2>
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -179,8 +165,8 @@ const Index = () => {
                 Our platform is designed to help you build lasting habits through community support and accountability.
               </motion.p>
             </div>
-            
-            <motion.div 
+
+            <motion.div
               variants={staggerVariants}
               initial="hidden"
               whileInView="visible"
@@ -205,7 +191,7 @@ const Index = () => {
             </motion.div>
           </div>
         </section>
-        
+
         {/* CTA Section */}
         <section className="py-16 px-4 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 z-0"></div>
@@ -233,28 +219,31 @@ const Index = () => {
           </div>
         </section>
       </main>
-      
+
       <footer className="py-8 px-6 border-t">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center gap-2 mb-4 md:mb-0">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground">
+            {/* <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground">
               <span className="font-bold text-xs">T</span>
             </div>
-            <span className="font-medium">Thryvana</span>
+            <span className="font-medium">Thryvana</span> */}
+            <Link to="/" className="flex items-center gap-2">
+              <img src={thryvanaLogo} alt="thryvanaLogo" className="w-[150px]" />
+            </Link>
           </div>
           <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex items-center gap-1"
               onClick={() => navigate("/feedback")}
             >
               <MessageSquare className="h-3.5 w-3.5" />
               Send Feedback
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex items-center gap-1"
               onClick={() => navigate("/admin")}
             >

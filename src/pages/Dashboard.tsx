@@ -135,14 +135,14 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Track your progress and stay motivated</p>
         </div>
-        <Button
+        {activeGoal && <Button
           onClick={() => navigate("/goal/create")}
           className="group"
           disabled={!!activeGoal}
         >
           <Plus className="mr-2 h-4 w-4" />
           <span>{hasCompleted ? "Start a New Goal" : (activeGoal ? "Goal in Progress" : "New Goal")}</span>
-        </Button>
+        </Button>}
       </div>
 
       {/* No active goal state */}
@@ -155,7 +155,7 @@ const Dashboard = () => {
           <Card className="glass">
             <CardHeader>
               <CardTitle className="text-xl">
-                {hasCompleted ? "Ready for a New Challenge?" : "No Active Goal"}
+                {hasCompleted ? "Ready for a New Challenge?" : "Achieve Your Goals"}
               </CardTitle>
               <CardDescription>
                 {hasCompleted
@@ -169,7 +169,7 @@ const Dashboard = () => {
                 className="w-full group"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                <span>{hasCompleted ? "Start a New Goal" : "Create Your First Goal"}</span>
+                <span>{hasCompleted ? "Start a New Goal" : "Start Your Goal Today"}</span>
               </Button>
             </CardContent>
           </Card>

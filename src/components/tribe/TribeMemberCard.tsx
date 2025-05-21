@@ -13,10 +13,10 @@ const TribeMemberCard = ({ member }) => (
                 <div className="flex items-center gap-3">
                     <Avatar>
                         <AvatarImage src={member?.avatar} />
-                        <AvatarFallback>{member?.username?.substring(0, 2)?.toUpperCase() || 'NA'}</AvatarFallback>
+                        <AvatarFallback>{member?.name?.substring(0, 2)?.toUpperCase() || 'NA'}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <div className="font-medium">{member.username || 'Unknown User'}</div>
+                        <div className="font-medium">{member.name || 'Unknown User'}</div>
                         <div className="text-sm text-muted-foreground">Working on a goal</div>
                     </div>
                 </div>

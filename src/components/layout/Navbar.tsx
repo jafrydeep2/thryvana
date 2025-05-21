@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Users, CheckCircle, User, Menu, X, MessageSquare } from "lucide-react";
+import { Home, Users, CheckCircle, User, Menu, X, MessageSquare, Download } from "lucide-react";
 import thryvanaLogo from '../../assets/images/thyvana-logo-3.png'
 
 const Navbar = () => {
@@ -122,6 +122,18 @@ const Navbar = () => {
                     <span>{item.name}</span>
                   </Link>
               ))}
+              <Link
+                to="/install"
+                className={cn(
+                  "flex items-center gap-3 p-2 rounded-lg transition-colors",
+                  location.pathname === '/install'
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
+                )}
+              >
+                <Download size={16} className="mr-1.5" />
+                Install App
+              </Link>
             </nav>
           </motion.div>
         )}

@@ -39,6 +39,7 @@ interface Tribe {
 interface TribeMember {
   id: string;
   user_id: string;
+  tribe_id: string;
   username: string;
   email: string;
   joined_at: string;
@@ -70,28 +71,62 @@ const TribeManagement = () => {
           throw tribesError;
         }
 
-        // Fetch user-tribe memberships
-        const { data: userTribesData, error: userTribesError } = await supabase
-          .from('user_tribes')
+        // Get users with active goals and their associated tribe
+        const { data: activeUsersData, error: activeUsersError } = await supabase
+          .from('goals')
           .select(`
-            tribe_id,
             user_id,
-            joined_at,
-            users!inner(username, email)
-          `);
+            goal_id,
+            is_active,
+            check_ins!inner (
+              tribe_id
+            ),
+            users!inner (
+              username,
+              email
+            )
+          `)
+          .eq('is_active', true);
 
-        if (userTribesError) {
-          toast.error(`Error fetching tribe memberships: ${userTribesError.message}`);
-          throw userTribesError;
+        if (activeUsersError) {
+          toast.error(`Error fetching active users: ${activeUsersError.message}`);
+          throw activeUsersError;
         }
 
-        // Group by tribe and count members
-        const tribeMemberCounts: Record<string, number> = {};
-        if (userTribesData) {
-          userTribesData.forEach(membership => {
-            tribeMemberCounts[membership.tribe_id] = (tribeMemberCounts[membership.tribe_id] || 0) + 1;
+        // Process active users and their tribes
+        const activeUserTribes: Record<string, { 
+          user_id: string; 
+          username: string; 
+          email: string; 
+          tribe_id: string;
+        }> = {};
+        
+        if (activeUsersData) {
+          activeUsersData.forEach(goalData => {
+            // For each active goal, get the associated tribe
+            // Use the first check-in's tribe_id (assuming consistent tribe per goal)
+            if (goalData.check_ins && goalData.check_ins.length > 0 && goalData.users) {
+              const tribeId = goalData.check_ins[0].tribe_id;
+              const userId = goalData.user_id;
+              
+              // Use this to track unique user-tribe combinations
+              const key = `${userId}-${tribeId}`;
+              
+              activeUserTribes[key] = {
+                user_id: userId,
+                username: goalData.users.username || "Unknown User",
+                email: goalData.users.email || "",
+                tribe_id: tribeId
+              };
+            }
           });
         }
+
+        // Count members per tribe
+        const tribeMemberCounts: Record<string, number> = {};
+        Object.values(activeUserTribes).forEach(({ tribe_id }) => {
+          tribeMemberCounts[tribe_id] = (tribeMemberCounts[tribe_id] || 0) + 1;
+        });
 
         // Format tribes data with member count
         const formattedTribes: Tribe[] = tribesData ? tribesData.map(tribe => ({
@@ -102,14 +137,17 @@ const TribeManagement = () => {
           checkInFrequency: tribe.frequency as FrequencyType
         })) : [];
 
-        // Format users data with tribe memberships
-        const formattedUsers: TribeMember[] = userTribesData ? userTribesData.map(membership => ({
-          id: membership.user_id,
-          user_id: membership.user_id,
-          username: membership.users?.username || "Unknown User",
-          email: membership.users?.email || "",
-          joined_at: membership.joined_at || new Date().toISOString()
-        })) : [];
+        // Format users data
+        const formattedUsers: TribeMember[] = Object.values(activeUserTribes).map(
+          ({ user_id, username, email, tribe_id }) => ({
+            id: user_id,
+            user_id,
+            tribe_id,
+            username,
+            email,
+            joined_at: new Date().toISOString() // Fallback since we don't have join date from this query
+          })
+        );
 
         setTribes(formattedTribes);
         setUsers(formattedUsers);
@@ -171,7 +209,7 @@ const TribeManagement = () => {
       if (deleteError) throw deleteError;
 
       // Update users who were in this tribe
-      setUsers(users.filter(user => user.id !== tribeId));
+      setUsers(users.filter(user => user.tribe_id !== tribeId));
       
       // Update local tribes state
       setTribes(tribes.filter(tribe => tribe.id !== tribeId));
@@ -232,18 +270,39 @@ const TribeManagement = () => {
 
   const removeUserFromTribe = async (userId: string, tribeId: string) => {
     try {
-      // Remove user-tribe relationship from database
-      const { error } = await supabase
-        .from('user_tribes')
-        .delete()
+      // First, find the active goal for this user in this tribe
+      const { data: goalData, error: goalError } = await supabase
+        .from('goals')
+        .select(`
+          goal_id,
+          check_ins!inner (
+            tribe_id
+          )
+        `)
         .eq('user_id', userId)
-        .eq('tribe_id', tribeId);
+        .eq('is_active', true);
 
-      if (error) throw error;
+      if (goalError) throw goalError;
+
+      // Find the matching goal where check-in tribe matches
+      const matchingGoal = goalData?.find(goal => 
+        goal.check_ins?.some(checkIn => checkIn.tribe_id === tribeId)
+      );
+
+      if (!matchingGoal) {
+        throw new Error("Active goal not found for this user in this tribe");
+      }
+
+      // Update the goal to set is_active to false
+      const { error: updateError } = await supabase
+        .from('goals')
+        .update({ is_active: false })
+        .eq('goal_id', matchingGoal.goal_id);
+
+      if (updateError) throw updateError;
       
       // Update local state
-      const updatedUsers = users.filter(user => !(user.user_id === userId));
-      setUsers(updatedUsers);
+      setUsers(users.filter(user => !(user.user_id === userId && user.tribe_id === tribeId)));
       
       // Update tribe member count
       setTribes(tribes.map(tribe => 
@@ -259,7 +318,7 @@ const TribeManagement = () => {
     }
   };
 
-  // Fix: Ensure frequency values are properly typed as FrequencyType
+  // Ensure frequency values are properly typed as FrequencyType
   const frequencyOptions = [
     { value: "daily" as FrequencyType, label: "Daily" },
     { value: "weekly" as FrequencyType, label: "Weekly" },
@@ -429,12 +488,12 @@ const TribeManagement = () => {
                           <CardHeader className="py-2">
                             <CardTitle className="text-sm">Tribe Members</CardTitle>
                           </CardHeader>
-                          <CardContent className="py-0">
-                            {users.filter(user => user.id === tribe.id).length === 0 ? (
+                          <CardContent className="py-0 pb-3">
+                            {users.filter(user => user.tribe_id === tribe.id).length === 0 ? (
                               <p className="text-sm text-muted-foreground">No members in this tribe</p>
                             ) : (
                               <div className="space-y-2">
-                                {users.filter(user => user.id === tribe.id).map(user => (
+                                {users.filter(user => user.tribe_id === tribe.id).map(user => (
                                   <div key={user.user_id} className="flex items-center justify-between bg-muted p-2 rounded-md">
                                     <div className="flex items-center space-x-2">
                                       <Badge variant="outline" className="h-8 w-8 rounded-full flex items-center justify-center">

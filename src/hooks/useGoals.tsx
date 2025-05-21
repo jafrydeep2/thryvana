@@ -197,7 +197,6 @@ export const useGoals = () => {
 
         if (tribesData) {
           setTribes(tribesData);
-          console.log('Tribes fetched successfully:', tribesData);
         }
 
         // Fetch current user's tribes
@@ -227,6 +226,91 @@ export const useGoals = () => {
   }, []);
 
 
+  const getDefaultTribe = async (frequency: "daily" | "weekly" | "monthly") => {
+    try {
+      // First, check if the default tribe for this frequency already exists
+      const { data, error } = await supabase
+        .from('tribes')
+        .select('*')
+        .eq('frequency', frequency)
+        .limit(1);
+
+      if (error) throw error;
+
+      // If found, return the existing tribe
+      if (data && data.length > 0) {
+        return data[0];
+      }
+
+      // If not found, create a new default tribe for this frequency
+      const { data: newTribe, error: createError } = await supabase
+        .from('tribes')
+        .insert([{ frequency }])
+        .select();
+
+      if (createError) throw createError;
+
+      if (newTribe && newTribe.length > 0) {
+        // Update tribes state
+        setTribes(prevTribes => [...prevTribes, newTribe[0]]);
+        return newTribe[0];
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error getting/creating default ${frequency} tribe:`, error);
+      return null;
+    }
+  };
+
+  const assignUserToDefaultTribe = async (userId: string, frequency: "daily" | "weekly" | "monthly") => {
+    try {
+      // Get the default tribe for this frequency
+      const defaultTribe = await getDefaultTribe(frequency);
+      if (!defaultTribe) {
+        console.error(`Failed to get/create default ${frequency} tribe`);
+        return false;
+      }
+
+      // Check if user is already in this tribe
+      const { data: existingMembership, error: checkError } = await supabase
+        .from('user_tribes')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('tribe_id', defaultTribe.tribe_id);
+
+      if (checkError) throw checkError;
+
+      // If already a member, no need to add again
+      if (existingMembership && existingMembership.length > 0) {
+        return true;
+      }
+
+      // Add user to the default tribe
+      const { data, error } = await supabase
+        .from('user_tribes')
+        .insert([{
+          user_id: userId,
+          tribe_id: defaultTribe.tribe_id,
+          joined_at: new Date().toISOString()
+        }])
+        .select();
+
+      if (error) throw error;
+
+      if (data) {
+        // Update userTribes state
+        setUserTribes(prevUserTribes => [...prevUserTribes, data[0]]);
+        console.log(`User automatically assigned to ${frequency} tribe`);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error(`Error assigning user to default ${frequency} tribe:`, error);
+      return false;
+    }
+  };
 
   const createGoal = async (goalFormValues: GoalFormValues) => {
     try {
@@ -278,8 +362,11 @@ export const useGoals = () => {
         setGoals((prevGoals: any) => [...prevGoals, newMappedGoal]);
 
         // Create tribe with the same timeframe if needed
-        await createTribe(goalFormValues.timeframe);
+        // await createTribe(goalFormValues.timeframe);
 
+        // Automatically assign user to the appropriate tribe based on goal frequency
+        await assignUserToDefaultTribe(userId, goalFormValues.timeframe);
+        
         return data[0];
       }
     } catch (error) {
@@ -891,7 +978,7 @@ export const useGoals = () => {
       return false;
     }
   };
-  
+
   return {
     goals,
     createGoal,
